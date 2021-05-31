@@ -4,14 +4,16 @@ const Employee = require("./lib/employee.js")
 const Engineer = require("./lib/engineer.js")
 const Intern = require("./lib/intern.js")
 const Manager = require("./lib/manager.js");
-const generateHtml = require("./src/generateHtml.js");
+const template = require("./src/template.js");
 
 const managers = [];
 const engineers = [];
-const inters = [];
+const interns = [];
+const employee = [];
 let totalCards = 0;
 let totalEngineers = 0;
 let totalInterns = 0;
+let totalManagers = 0;
 
 //Manager Questions
 const promptManager = () => {
@@ -19,7 +21,7 @@ const promptManager = () => {
         {
             type: "input",
             message: "What is your name?",
-            name: "manager",
+            name: "name",
         },
         {
             type: "input",
@@ -51,7 +53,7 @@ const promptEngineers = () => {
         {
             type: "input",
             message: "What is your name?",
-            name: "engineer",
+            name: "name",
         },
         {
             type: "input",
@@ -83,7 +85,7 @@ const promptInterns = () => {
         {
             type: "input",
             message: "What is your name?",
-            name: "intern",
+            name: "name",
         },
         {
             type: "input",
@@ -109,80 +111,61 @@ const promptInterns = () => {
     ])
 };
 
-//After answered Engineer questions to proceed
-const addEngineer = async () => {
-    const Engineer = await promptEngineers();
-    const {engineer, engineerId, engineerEmail, engineerGitHub, addMore} = engineer;
-    engineers.push(engineer);
-        if(engineer.addMore === "add an Engineer"){
-            addEngineer();
-        }else if (engineer.addMore === "add an Intern") {
-            addIntern();
-        }else{
-            generateHtml();
-        }
-};
-//card for engineer, need help
-const createEngineers = () => {
-    lets card = "";
-    engineers.forEach(engineer => {
-        let newEngineer = new Engineer(engineer.engineer, engineer.engineerId, engineer.engineerEmail, engineer.engineerGitHub);
-    })
-}
-
-//After answered Intern questions to proceed
-const addIntern = async () => {
-    const newIntern = await promptInterns();
-    const {intern, internId, internEmail, internSchool, addMore} = newIntern;
-    interns.push(newIntern);
-        if(newIntern.addMore === "add an Engineer"){
-            addEngineer();
-        }else if (newIntern.addMore === "add an Intern"){
-            addIntern();
-        }else {
-            generateHtml();
-        }
-};
-//card for intern, need help
-const createInterns = () => {
-    lets card = "";
-    interns.forEach(intern => {
-        let newIntern = new Intern(intern.intern, intern.internId, intern.internEmail, intern.internSchool);
-    })
-}
-
-//After Manager questions
+//Manager
 const init = async () => {
-    const managers = await promptManager();
-    const {Manager, managerId, managerEmail, managerOfficeNumber, addMore} = managers;
-    managers.push(managers);
-        if(managers.addMore === "add an Engineer"){
-            addEngineer();
-        }else if (newIntern.addMore === "add an Intern"){
-            addIntern();
-        }else {
-            generateHtml();
-        }
-};
-//card for manager/beginning
-const generateHtml = async () => {
-    totalEngineers = engineers.length;
-    totalInterns = interns.length;
-    totalCards = totalEngineers = totalInterns +1;
-    let manager = generateHtml(managers[0].manager, manager[0].managerId, manager[0].managerEmail, totalCards);
+    const answers = await promptManager();
+    const { name, managerId, managerEmail, managerOfficeNumber, addMore } = answers;
+    const manager = new Manager(managerOfficeNumber, name, managerId, managerEmail)
+    managers.push(manager);
+    if (addMore === "add an Engineer") {
+        addEngineer();
+    } else if (addMore === "add an Intern") {
+        addIntern();
     }
+    else {
+        const data = template.generateHtml(managers, engineers, interns)
+        console.log(data)
+        writeToFile(data)
+    }
+};
 
-function writeToFile(fileName, data) {
-    fs.writeFile(fileName, data, (err) =>
+//Engineer
+const addEngineer = async () => {
+    const answers = await promptEngineers();
+    const { name, engineerId, engineerEmail, engineerGitHub, addMore } = answers;
+    const engineer = new Engineer(engineerGitHub, name, engineerId, engineerEmail)
+    engineers.push(engineer);
+    if (addMore === "add an Engineer") {
+        addEngineer();
+    } else if (addMore === "add an Intern") {
+        addIntern();
+    } else {
+        const data = template.generateHtml(managers, engineers, interns)
+        writeToFile(data)
+    }
+};
+
+//Intern
+const addIntern = async () => {
+    const answers = await promptInterns();
+    const { name, internId, internEmail, internSchool, addMore } = answers;
+    const intern = new Intern(internSchool, name, internId, internEmail)
+    interns.push(intern);
+    if (addMore === "add an Engineer") {
+        addEngineer();
+    } else if (addMore === "add an Intern") {
+        addIntern();
+    } else {
+        const data = template.generateHtml(managers, engineers, interns)
+        writeToFile(data)
+    }
+};
+
+function writeToFile(data) {
+    fs.writeFile("./dist/index.html", data, (err) =>
         err ? console.error(err) : console.log('Success!')
     );
 }
-function init() {
-    inquirer.prompt(questions)
-        .then(function (answers) {
-            const text = generateHtml.generateHtml(answers)
-            writeToFile("./dist/index.html", text)
-        })
-}
+
 
 init();
